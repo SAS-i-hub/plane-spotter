@@ -367,7 +367,7 @@ function lmLand(cv,w,h,cx,cy,z){
 var lmRaf=0;
 function lmSched(){if(lmRaf)return;lmRaf=requestAnimationFrame(function(){lmRaf=0;lmDraw()})}
 var PLN='<svg viewBox="0 0 24 24"><path d="M12 1.5l2 7.5 8 4.5v2l-8-2.2-.6 4.6 3 2.2v1.6L12 20.6l-4.4 1.1v-1.6l3-2.2-.6-4.6-8 2.2v-2l8-4.5z"/></svg>';
-var LV={lat:61.17,lon:-149.99,z:8,ac:[],sel:"",timer:0,tiles:{},mk:{},err:"",busy:false,again:false,moved:false,ft:0,t0:0,tileErr:false,apt:-1,auto:false,aptKey:-1,relay:(function(){var D="https://plane-relay.jaxsonderemer.workers.dev";try{var v=localStorage.getItem("planespotter.relay");return v===null?D:v}catch(e){return D}})(),layer:(function(){try{return localStorage.getItem("planespotter.lay")||"sat"}catch(e){return "sat"}})()};
+var LV={lat:61.17,lon:-149.99,z:8,ac:[],sel:"",timer:0,tiles:{},mk:{},err:"",busy:false,again:false,moved:false,ft:0,t0:0,tileErr:false,apt:-1,auto:false,aptKey:-1,relay:(function(){var D="";try{var v=localStorage.getItem("planespotter.relay");return v===null?D:v}catch(e){return D}})(),layer:(function(){try{return localStorage.getItem("planespotter.lay")||"sat"}catch(e){return "sat"}})()};
 var PRE=[["Anchorage",61.17,-149.99,8],["Seattle",47.45,-122.31,8],["Los Angeles",33.94,-118.41,8],["Chicago",41.98,-87.9,8],["New York",40.64,-73.78,8],["London",51.47,-0.45,8]];
 function lmType(c){c=c||"";if(/^B73\w$|^B3\wM$/.test(c))return"Boeing 737";if(/^A3(18|19|20|21)$|^A(19|20|21)N$/.test(c))return"Airbus A320 family";if(/^B74/.test(c))return"Boeing 747";if(/^B77/.test(c))return"Boeing 777";if(/^B78/.test(c))return"Boeing 787 Dreamliner";if(/^A33/.test(c))return"Airbus A330";if(/^A35/.test(c))return"Airbus A350";if(/^A38/.test(c))return"Airbus A380";if(/^E75|^E17/.test(c))return"Embraer E175";if(/^CRJ/.test(c))return"Bombardier CRJ";if(/^AT7/.test(c))return"ATR 72";if(/^DH8/.test(c))return"Dash 8 / Q400";if(c==="C172")return"Cessna 172";return""}
 function wx(lon,z){return (lon+180)/360*256*Math.pow(2,z)}
@@ -419,16 +419,17 @@ function lmFetch(){
   var el=$("lmap");if(!el)return;LV.busy=true;
   var mpp=156543.03*Math.cos(LV.lat*Math.PI/180)/Math.pow(2,LV.z),r=Math.max(20,Math.min(250,Math.round(mpp*Math.max(el.clientWidth,el.clientHeight)/2/1852*1.15)));
   var order=(LV.relay?[{n:"your relay",u:function(a,o,r){return LV.relay.replace(/\/+$/,"")+"/?lat="+a.toFixed(3)+"&lon="+o.toFixed(3)+"&r="+r}}]:[]).concat(PROV).sort(function(a,b){return (b.n===LV.prov?1:0)-(a.n===LV.prov?1:0)}),fails=[];
+  LV.cool=LV.cool||{};var cl=order.filter(function(p){return !(LV.cool[p.n]>Date.now())});if(cl.length)order=cl;
   function done(){LV.busy=false;if(LV.again){LV.again=false;lmFetch()}}
   function next(i){
-    if(i>=order.length){LV.err=fails.join("; ");done();lmStatus();return}
+    if(i>=order.length){LV.err=fails.join("; ");LV.nextOk=Date.now()+60000;done();lmStatus();return}
     var p=order[i],ctrl=window.AbortController?new AbortController():null,tm=setTimeout(function(){if(ctrl)ctrl.abort()},p.n==="your relay"?16000:9000);
     fetch(p.u(LV.lat,LV.lon,r),ctrl?{signal:ctrl.signal}:{})
     .then(function(res){clearTimeout(tm);if(!res.ok){return res.text().then(function(t){var m="";try{m=(JSON.parse(t).errors||[]).join(", ")}catch(e){}throw new Error("HTTP "+res.status+(m?" ("+m+")":""))})}return res.json()})
     .then(function(j){
       var list=lmNorm(p,j).filter(function(a){return a&&typeof a.lat==="number"&&typeof a.lon==="number"}).slice(0,400);
-      LV.prov=p.n;LV.err="";LV.ac=list;LV.t0=Date.now();if(LV.follow&&LV.sel){var fa=list.filter(function(x){return x.hex===LV.sel})[0];if(fa){LV.lat=fa.lat;LV.lon=fa.lon}}done();lmDraw();lmStatus();lmInfo()})
-    .catch(function(e){clearTimeout(tm);fails.push(p.n+": "+(e&&e.name==="AbortError"?"timed out":(e instanceof TypeError?"blocked or offline":((e&&e.message)||"error"))));next(i+1)})}
+      LV.prov=p.n;LV.err="";LV.nextOk=0;LV.ac=list;LV.t0=Date.now();if(LV.follow&&LV.sel){var fa=list.filter(function(x){return x.hex===LV.sel})[0];if(fa){LV.lat=fa.lat;LV.lon=fa.lon}}done();lmDraw();lmStatus();lmInfo()})
+    .catch(function(e){clearTimeout(tm);if(e&&/HTTP (429|403)/.test(e.message||""))LV.cool[p.n]=Date.now()+(/429/.test(e.message)?120000:300000);fails.push(p.n+": "+(e&&e.name==="AbortError"?"timed out":(e instanceof TypeError?"blocked or offline":((e&&e.message)||"error"))));next(i+1)})}
   next(0)}
 function lmSoon(){clearTimeout(LV.ft);LV.ft=setTimeout(lmFetch,450)}
 function lmZoom(d){LV.z=Math.max(2,Math.min(14,Math.round(LV.z)+d));lmDraw();lmSoon()}
@@ -572,7 +573,7 @@ function renderLive(){
   $("lrelcp").onclick=function(){var b=this;function ok(){b.textContent="Copied ✓"}try{navigator.clipboard.writeText(WORKER).then(ok,function(){})}catch(e){}};
   document.querySelectorAll(".lay button").forEach(function(b){b.onclick=function(){lmLayer(b.getAttribute("data-lay"))}});lmAttr();
   lmDraw();lmStatus();lmFetch();
-  LV.timer=setInterval(function(){if($("live").hidden){clearInterval(LV.timer);return}lmFetch()},20000);
+  LV.timer=setInterval(function(){if($("live").hidden){clearInterval(LV.timer);return}if(!(LV.nextOk&&Date.now()<LV.nextOk))lmFetch()},20000);
 }
 function renderFleet(){
   var g={};
