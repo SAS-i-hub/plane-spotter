@@ -379,7 +379,7 @@ function lmStatus(){var s=$("lstat");if(!s)return;
   if(LV.err&&LV.ac.length&&LV.t0){s.textContent=LV.ac.length+' aircraft · showing the last update at '+new Date(LV.t0).toLocaleTimeString()+' · retrying…';return}
   if(LV.err){s.innerHTML='No live flight feed could be reached from this page ('+esc(LV.err)+'). Pages here may block outside connections. Open a live map instead: '+lmLinks();return}
   s.textContent=LV.t0?LV.ac.length+' aircraft · via '+LV.prov+' · updated '+new Date(LV.t0).toLocaleTimeString()+' · refreshes every 20 s'+(LV.z<7?' · zoomed out: only planes within about 250 nm of the center are shown':''):'Loading live flights…'}
-var _lms=lmStatus;lmStatus=function(){_lms.apply(this,arguments);lmAptNear()};
+var _lms=lmStatus;lmStatus=function(){_lms.apply(this,arguments);lmAptNear();var e=$("lstat");if(e)e.insertAdjacentHTML("beforeend",' <span style="opacity:.6">[build 43]</span>')};
 function lmDraw(){
   var el=$("lmap");if(!el)return;
   var w=el.clientWidth,h=el.clientHeight,z=LV.z,tz=Math.max(0,Math.min(19,Math.round(z))),kk=Math.pow(2,z-tz),n=Math.pow(2,tz),cx=wx(LV.lon,z),cy=wy(LV.lat,z);
