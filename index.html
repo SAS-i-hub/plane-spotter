@@ -509,7 +509,7 @@ function lmInfo(){
   var al=$("dal");al.appendChild(lmLogo(air,22));var sp=document.createElement("span");sp.textContent=opn||"Unknown operator";al.appendChild(sp);
   $("dx").onclick=function(){LV.sel="";LV.follow=false;LV.infoHex="";box.innerHTML="";lmDraw()};
   $("dfol").onclick=function(){LV.follow=!LV.follow;var q=LV.ac.filter(function(x){return x.hex===LV.sel})[0];if(q){if(LV.follow){LV.lat=q.lat;LV.lon=q.lon;lmDraw()}lmInfoUpd(q)}};
-  $("lg").onclick=function(){prefill=t;prefillV="";show("log");if(a.r)$("f-reg").value=String(a.r).toUpperCase();if(!t){$("f-type").value="Other";$("f-var").innerHTML=vopts("Other","")}};
+  $("lg").onclick=function(){prefill=t;prefillV="";show("log");if(a.r){$("f-reg").value=String(a.r).toUpperCase();$("f-reg").oninput&&$("f-reg").oninput()}if(!t){$("f-type").value="Other";$("f-var").innerHTML=vopts("Other","")}};
   var ph=$("dph"),hex=a.hex;
   function showPh(P){if(LV.infoHex!==hex||!P||!P.photos||!P.photos[0]){ph.style.display="none";return}var p=P.photos[0],src=(p.thumbnail_large||p.thumbnail||{}).src;if(!src){ph.style.display="none";return}
     ph.innerHTML='<img src="'+esc(src)+'" alt=""><a class="dcr" target="_blank" rel="noopener" href="'+esc(p.link||"#")+'">© '+esc(p.photographer||"Photographer")+' · Planespotters.net</a>'}
@@ -598,7 +598,7 @@ function renderSighting(){
   var hasV=s.variant&&(VARIANTS[s.type]||[]).some(function(r){return r[0]===s.variant});
   $("sdetail").innerHTML='<button class="link" id="sback">‹ Back to your sightings</button>'+
   '<div class="dhero">'+(t?'<span class="tag">'+esc(t.k)+'</span>':'')+'<h2>'+esc(s.type)+'</h2>'+(s.variant?'<p>'+esc(s.variant)+'</p>':'')+'</div>'+
-  (s.img?'<img class="thumb" style="max-height:none;object-fit:contain;margin:0 0 12px" src="'+s.img+'" alt="'+esc(s.type)+'">':'')+
+  (s.img?'<img class="thumb" style="max-height:none;object-fit:contain;margin:0 0 '+(s.imgCr?'4':'12')+'px" src="'+s.img+'" alt="'+esc(s.type)+'">'+(s.imgCr?'<p class="meta" style="text-align:center;margin:0 0 12px">'+(s.imgLink?'<a target="_blank" rel="noopener" href="'+esc(s.imgLink)+'" style="color:inherit">'+esc(s.imgCr)+'</a>':esc(s.imgCr))+'</p>':''):'')+
   '<div class="card"><b>Sighting details</b>'+rows.map(function(r){return '<div style="display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)"><span class="meta">'+esc(r[0])+'</span><b style="text-align:right">'+esc(r[1])+'</b></div>'}).join("")+'</div>'+
   (s.note?'<div class="card"><b>Notes</b><p style="margin:6px 0 0">'+esc(s.note)+'</p></div>':'')+
   (d?'<div class="card"><b>About this aircraft</b><p style="margin:6px 0 0">'+esc(d.about)+'</p></div>'+
@@ -701,7 +701,7 @@ var PLANE='<svg class="plane" viewBox="0 0 64 64" fill="#fff"><path d="M60 30L38
 var FLY='<div class="fly"><span class="trail"></span><svg viewBox="0 0 64 64"><path d="M60 30L38 24 26 6h-5l5 18-14 1-5-6H2l3 13-3 13h2l5-6 14 1-5 18h5l12-18 22-6c3-1 4-5 0-6z"/></svg></div>';
 var KEY="planespotter.v1",store=[];
 try{store=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){store=[]}
-var notice="",pendingImg="";
+var notice="",pendingImg="",pendingCr="",pendingLink="";
 function save(){try{localStorage.setItem(KEY,JSON.stringify(store));return true}catch(e){return false}}
 function shrink(f,cb){
   var r=new FileReader();
@@ -765,20 +765,31 @@ function renderLog(){
   '<div><label>Airline</label><input id="f-air" placeholder="e.g. Delta"></div></div>'+
   '<div class="row"><div><label>Location</label><input id="f-loc" placeholder="Airport or spot"></div>'+
   '<div><label>Date</label><input id="f-date" type="date" value="'+today+'"></div></div>'+
-  '<label>Photo</label><input id="f-img" type="file" accept="image/*"><div id="f-prev"></div>'+
+  '<div id="f-prev" class="meta" style="margin-top:10px">A photo of the aircraft is added automatically from its registration.</div>'+
   '<button class="btn" id="add">Add sighting</button></div>'+
   (function(m){notice="";return m?'<div class="card meta">'+esc(m)+'</div>':''})(notice)+'<div class="sec"><b>Your sightings</b><span class="meta">'+store.length+' total</span></div>'+
   (list||'<div class="empty">No sightings yet.</div>');
-  pendingImg="";
-  $("f-img").onchange=function(){
-    var f=this.files&&this.files[0];if(!f)return;
-    shrink(f,function(d){pendingImg=d;$("f-prev").innerHTML=d?'<img class="thumb" src="'+d+'" alt="Photo preview">':'<div class="meta" style="margin-top:6px">Could not read that image.</div>'});
-  };
+  pendingImg="";pendingCr="";pendingLink="";var rtm=0,rlast="";
+  function regPhoto(reg,cb){
+    fetch("https://api.planespotters.net/pub/photos/reg/"+encodeURIComponent(reg)).then(function(r){return r.json()}).then(function(j){
+      var p=j&&j.photos&&j.photos[0],src=p&&((p.thumbnail_large||p.thumbnail||{}).src);cb(src?{img:src,cr:"© "+(p.photographer||"Photographer")+" · Planespotters.net",link:p.link||""}:null)}).catch(function(){cb(null)})}
+  var rg=$("f-reg");
+  rg.oninput=function(){
+    clearTimeout(rtm);var v=rg.value.trim().toUpperCase().replace(/\s+/g,""),pv=$("f-prev");
+    if(!/^[A-Z0-9][A-Z0-9-]{2,9}$/.test(v)){pendingImg="";pv.className="meta";pv.innerHTML="A photo of the aircraft is added automatically from its registration.";rlast="";return}
+    if(v===rlast)return;
+    pv.className="meta";pv.textContent="Looking for a photo of "+v+"…";
+    rtm=setTimeout(function(){rlast=v;regPhoto(v,function(r){if(rg.value.trim().toUpperCase().replace(/\s+/g,"")!==v)return;
+      if(r){pendingImg=r.img;pendingCr=r.cr;pendingLink=r.link;pv.innerHTML='<img class="thumb" src="'+esc(r.img)+'" alt="'+esc(v)+'"><div style="margin-top:4px">'+esc(r.cr)+'</div>'}
+      else{pendingImg="";pv.textContent="No photo found for "+v+". The sighting will be saved without one."}})},600)};
+  if(rg.value)rg.oninput();
   $("f-type").onchange=function(){$("f-var").innerHTML=vopts($("f-type").value,"")};
   $("add").onclick=function(){
-    var g=function(i){return $(i).value.trim()};
-    store.push({id:Date.now(),type:g("f-type"),variant:g("f-var"),img:pendingImg,reg:g("f-reg").toUpperCase(),airline:g("f-air"),where:g("f-loc"),date:g("f-date")||today});
-    if(!save()){store[store.length-1].img="";save();notice="Storage is full, so the photo was not saved. The sighting itself was."}prefill="";prefillV="";renderLog();
+    var g=function(i){return $(i).value.trim()},reg=g("f-reg").toUpperCase().replace(/\s+/g,"");
+    var rec={id:Date.now(),type:g("f-type"),variant:g("f-var"),img:pendingImg,imgCr:pendingCr,imgLink:pendingLink,reg:reg,airline:g("f-air"),where:g("f-loc"),date:g("f-date")||today};
+    var fin=function(){store.push(rec);if(!save()){rec.img="";save();notice="Storage is full, so the photo was not saved. The sighting itself was."}prefill="";prefillV="";renderLog()};
+    if(!rec.img&&/^[A-Z0-9][A-Z0-9-]{2,9}$/.test(reg)){var done=false,t=setTimeout(function(){if(!done){done=true;fin()}},4000);
+      regPhoto(reg,function(r){if(done)return;done=true;clearTimeout(t);if(r){rec.img=r.img;rec.imgCr=r.cr;rec.imgLink=r.link}fin()})}else fin();
   };
   document.querySelectorAll("[data-del]").forEach(function(b){b.onclick=function(e){e.stopPropagation();
     var id=+b.getAttribute("data-del");store=store.filter(function(s){return s.id!==id});save();renderLog()}});
