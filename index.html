@@ -118,6 +118,7 @@ input[type=date]::-webkit-date-and-time-value{text-align:left;min-width:0}
 .ac svg{width:26px;height:26px;fill:currentColor;stroke:#fff;stroke-width:1.2;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
 .ac.sel{color:#1a6ef0;z-index:3}.ac.sel svg{width:32px;height:32px;margin:-3px 0 0 -3px}
 .apt-t{width:100%;border-collapse:collapse;font-size:.82rem}.apt-t th{text-align:left;color:var(--mute);font-weight:600;padding:4px 8px 4px 0}.apt-t td{padding:6px 8px 6px 0;border-top:1px solid var(--line)}
+body{overflow-x:clip}
 .lay{position:absolute;left:10px;top:10px;display:flex;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;z-index:5;box-shadow:0 2px 8px rgba(0,0,0,.2)}
 .lay button{border:0;background:transparent;color:var(--ink);font:inherit;font-size:.76rem;font-weight:600;padding:8px 10px;cursor:pointer}.lay button.on{background:var(--acc);color:#fff}
 #linfo{scroll-margin-top:calc(50dvh + 10px)}
@@ -144,7 +145,7 @@ input[type=date]::-webkit-date-and-time-value{text-align:left;min-width:0}
 .attr{position:absolute;left:8px;bottom:6px;font-size:.65rem;background:rgba(255,255,255,.8);color:#333;padding:1px 6px;border-radius:6px;z-index:5}
 .chip{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:7px 12px;font:inherit;font-size:.85rem;margin:0 6px 6px 0;cursor:pointer}
 #live a{color:var(--acc);font-weight:600}
-#live .lm{height:50vh;height:50dvh;min-height:0;margin:-16px -16px 0;width:calc(100% + 32px);border-radius:0;border-width:0 0 1px;position:sticky;top:0;z-index:6}
+#live .lm{height:50vh;height:50dvh;min-height:0;margin:-16px 0 0 calc(50% - 50vw);width:100vw;border-radius:0;border-width:0 0 1px;position:sticky;top:0;z-index:6}
 .me{position:absolute;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:#1a6ef0;border:3px solid #fff;animation:pulse 2s infinite;z-index:4;pointer-events:none}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(26,110,240,.6)}70%{box-shadow:0 0 0 16px rgba(26,110,240,0)}100%{box-shadow:0 0 0 0 rgba(26,110,240,0)}}
 </style>
@@ -375,19 +376,20 @@ function unx(x,z){return x/(256*Math.pow(2,z))*360-180}
 function uny(y,z){var n=Math.PI-2*Math.PI*y/(256*Math.pow(2,z));return 180/Math.PI*Math.atan(0.5*(Math.exp(n)-Math.exp(-n)))}
 function lmLinks(){var la=LV.lat.toFixed(2),lo=LV.lon.toFixed(2);return '<a target="_blank" rel="noopener" href="https://www.flightradar24.com/'+la+','+lo+'/'+LV.z+'">Flightradar24</a> · <a target="_blank" rel="noopener" href="https://globe.adsbexchange.com/?lat='+la+'&lon='+lo+'&zoom='+LV.z+'">ADS-B Exchange</a>'}
 function lmStatus(){var s=$("lstat");if(!s)return;
+  if(LV.err&&LV.ac.length&&LV.t0){s.textContent=LV.ac.length+' aircraft · showing the last update at '+new Date(LV.t0).toLocaleTimeString()+' · retrying…';return}
   if(LV.err){s.innerHTML='No live flight feed could be reached from this page ('+esc(LV.err)+'). Pages here may block outside connections. Open a live map instead: '+lmLinks();return}
   s.textContent=LV.t0?LV.ac.length+' aircraft · via '+LV.prov+' · updated '+new Date(LV.t0).toLocaleTimeString()+' · refreshes every 15 s'+(LV.z<7?' · zoomed out: only planes within about 250 nm of the center are shown':''):'Loading live flights…'}
 var _lms=lmStatus;lmStatus=function(){_lms.apply(this,arguments);lmAptNear()};
 function lmDraw(){
   var el=$("lmap");if(!el)return;
-  var w=el.clientWidth,h=el.clientHeight,z=LV.z,n=Math.pow(2,z),cx=wx(LV.lon,z),cy=wy(LV.lat,z);
+  var w=el.clientWidth,h=el.clientHeight,z=LV.z,tz=Math.max(0,Math.min(19,Math.round(z))),kk=Math.pow(2,z-tz),n=Math.pow(2,tz),cx=wx(LV.lon,z),cy=wy(LV.lat,z);
   var cvEl=$("lcv");if(cvEl){lmLand(cvEl,w,h,cx,cy,z);lmAuto(w,h)}
-  var x0=Math.floor((cx-w/2)/256),x1=Math.floor((cx+w/2)/256),y0=Math.max(0,Math.floor((cy-h/2)/256)),y1=Math.min(n-1,Math.floor((cy+h/2)/256)),keep={};
+  var TS=256*kk,x0=Math.floor((cx-w/2)/TS),x1=Math.floor((cx+w/2)/TS),y0=Math.max(0,Math.floor((cy-h/2)/TS)),y1=Math.min(n-1,Math.floor((cy+h/2)/TS)),keep={};
   for(var x=x0;x<=x1;x++)for(var y=y0;y<=y1;y++){
-    var k=LV.layer+"/"+z+"/"+x+"/"+y,im=LV.tiles[k];
+    var k=LV.layer+"/"+tz+"/"+x+"/"+y,im=LV.tiles[k];
     if(!im){if(LV.tileErr||LV.layer==="off")continue;im=new Image();im.alt="";im.draggable=false;im.onerror=function(){if(!LV.tileErr){LV.tileErr=true;lmAttr();lmSched()}this.style.display="none"};
-      var tx=((x%n)+n)%n;im.src=LV.layer==="sat"?"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/"+z+"/"+y+"/"+tx:"https://tile.openstreetmap.org/"+z+"/"+tx+"/"+y+".png";el.insertBefore(im,cvEl||el.firstChild);LV.tiles[k]=im}
-    im.style.left=Math.round(x*256-cx+w/2)+"px";im.style.top=Math.round(y*256-cy+h/2)+"px";keep[k]=1}
+      var tx=((x%n)+n)%n;im.src=LV.layer==="sat"?"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/"+tz+"/"+y+"/"+tx:"https://tile.openstreetmap.org/"+tz+"/"+tx+"/"+y+".png";el.insertBefore(im,cvEl||el.firstChild);LV.tiles[k]=im}
+    im.style.left=Math.round(x*TS-cx+w/2)+"px";im.style.top=Math.round(y*TS-cy+h/2)+"px";im.style.width=im.style.height=(Math.ceil(TS)+1)+"px";keep[k]=1}
   Object.keys(LV.tiles).forEach(function(k){if(!keep[k]){var i=LV.tiles[k];if(i.parentNode)i.parentNode.removeChild(i);delete LV.tiles[k]}});
   var seen={};
   LV.ac.forEach(function(a){
@@ -420,17 +422,17 @@ function lmFetch(){
   function done(){LV.busy=false;if(LV.again){LV.again=false;lmFetch()}}
   function next(i){
     if(i>=order.length){LV.err=fails.join("; ");done();lmStatus();return}
-    var p=order[i],ctrl=window.AbortController?new AbortController():null,tm=setTimeout(function(){if(ctrl)ctrl.abort()},9000);
+    var p=order[i],ctrl=window.AbortController?new AbortController():null,tm=setTimeout(function(){if(ctrl)ctrl.abort()},p.n==="your relay"?16000:9000);
     fetch(p.u(LV.lat,LV.lon,r),ctrl?{signal:ctrl.signal}:{})
-    .then(function(res){clearTimeout(tm);if(!res.ok)throw new Error("HTTP "+res.status);return res.json()})
+    .then(function(res){clearTimeout(tm);if(!res.ok){return res.text().then(function(t){var m="";try{m=(JSON.parse(t).errors||[]).join(", ")}catch(e){}throw new Error("HTTP "+res.status+(m?" ("+m+")":""))})}return res.json()})
     .then(function(j){
       var list=lmNorm(p,j).filter(function(a){return a&&typeof a.lat==="number"&&typeof a.lon==="number"}).slice(0,400);
       LV.prov=p.n;LV.err="";LV.ac=list;LV.t0=Date.now();if(LV.follow&&LV.sel){var fa=list.filter(function(x){return x.hex===LV.sel})[0];if(fa){LV.lat=fa.lat;LV.lon=fa.lon}}done();lmDraw();lmStatus();lmInfo()})
     .catch(function(e){clearTimeout(tm);fails.push(p.n+": "+(e&&e.name==="AbortError"?"timed out":(e instanceof TypeError?"blocked or offline":((e&&e.message)||"error"))));next(i+1)})}
   next(0)}
 function lmSoon(){clearTimeout(LV.ft);LV.ft=setTimeout(lmFetch,450)}
-function lmZoom(d){LV.z=Math.max(2,Math.min(14,LV.z+d));lmDraw();lmSoon()}
-var WORKER="export default {\n  async fetch(req) {\n    const u = new URL(req.url);\n    const cors = { \"access-control-allow-origin\": \"*\" };\n    const json = { ...cors, \"content-type\": \"application/json\", \"cache-control\": \"public, max-age=10\" };\n    const proxy = async (url, ttl) => {\n      try {\n        const x = await fetch(url, { headers: { \"user-agent\": \"plane-spotter\" } });\n        return new Response(await x.text(), { status: x.status, headers: { ...json, \"cache-control\": \"public, max-age=\" + ttl } });\n      } catch (e) { return new Response(\"{}\", { status: 502, headers: cors }); }\n    };\n    const route = u.searchParams.get(\"route\");\n    if (route) return proxy(\"https://api.adsb.lol/api/0/route/\" + encodeURIComponent(route), 300);\n    const photo = u.searchParams.get(\"photo\");\n    if (photo) return proxy(\"https://api.planespotters.net/pub/photos/hex/\" + encodeURIComponent(photo), 3600);\n    const lat = +u.searchParams.get(\"lat\"), lon = +u.searchParams.get(\"lon\");\n    const r = Math.min(250, +u.searchParams.get(\"r\") || 100);\n    if (!isFinite(lat) || !isFinite(lon)) return new Response(\"lat and lon required\", { status: 400, headers: cors });\n    const sources = [\n      `https://api.adsb.lol/v2/point/${lat}/${lon}/${r}`,\n      `https://api.airplanes.live/v2/point/${lat}/${lon}/${r}`,\n      `https://opendata.adsb.fi/api/v2/lat/${lat}/lon/${lon}/dist/${r}`\n    ];\n    for (const s of sources) {\n      try {\n        const x = await fetch(s, { headers: { \"user-agent\": \"plane-spotter\" } });\n        if (x.ok) return new Response(await x.text(), { headers: json });\n      } catch (e) {}\n    }\n    return new Response('{\"ac\":[]}', { status: 502, headers: cors });\n  }\n};\n";
+function lmZoom(d){LV.z=Math.max(2,Math.min(14,Math.round(LV.z)+d));lmDraw();lmSoon()}
+var WORKER="export default {\n  async fetch(req) {\n    const u = new URL(req.url);\n    const cors = { \"access-control-allow-origin\": \"*\" };\n    const json = { ...cors, \"content-type\": \"application/json\", \"cache-control\": \"public, max-age=10\" };\n    const proxy = async (url, ttl) => {\n      try {\n        const x = await fetch(url, { headers: { \"user-agent\": \"plane-spotter\" } });\n        return new Response(await x.text(), { status: x.status, headers: { ...json, \"cache-control\": \"public, max-age=\" + ttl } });\n      } catch (e) { return new Response(\"{}\", { status: 502, headers: cors }); }\n    };\n    const route = u.searchParams.get(\"route\");\n    if (route) return proxy(\"https://api.adsb.lol/api/0/route/\" + encodeURIComponent(route), 300);\n    const photo = u.searchParams.get(\"photo\");\n    if (photo) return proxy(\"https://api.planespotters.net/pub/photos/hex/\" + encodeURIComponent(photo), 3600);\n    const lat = +u.searchParams.get(\"lat\"), lon = +u.searchParams.get(\"lon\");\n    const r = Math.min(250, +u.searchParams.get(\"r\") || 100);\n    if (!isFinite(lat) || !isFinite(lon)) return new Response(\"lat and lon required\", { status: 400, headers: cors });\n    const sources = [\n      `https://api.adsb.lol/v2/point/${lat}/${lon}/${r}`,\n      `https://api.adsb.one/v2/point/${lat}/${lon}/${r}`,\n      `https://api.airplanes.live/v2/point/${lat}/${lon}/${r}`,\n      `https://opendata.adsb.fi/api/v2/lat/${lat}/lon/${lon}/dist/${r}`\n    ];\n    const errors = [];\n    const hdr = { \"user-agent\": \"Mozilla/5.0 (compatible; plane-spotter)\", \"accept\": \"application/json\" };\n    try {\n      const body = await Promise.any(sources.map(async s => {\n        const host = new URL(s).host;\n        let x;\n        try { x = await fetch(s, { headers: hdr, signal: AbortSignal.timeout(6000) }); }\n        catch (e) { throw new Error(host + \": \" + (e && e.message || \"failed\")); }\n        if (!x.ok) throw new Error(host + \": HTTP \" + x.status);\n        return await x.text();\n      }));\n      return new Response(body, { headers: json });\n    } catch (e) { (e.errors || [e]).forEach(x => errors.push(x.message)); }\n    try {\n      const d = r / 60, e = d / Math.max(0.2, Math.cos(lat * Math.PI / 180));\n      const os = `https://opensky-network.org/api/states/all?lamin=${lat - d}&lomin=${lon - e}&lamax=${lat + d}&lomax=${lon + e}`;\n      const x = await fetch(os, { headers: hdr, signal: AbortSignal.timeout(7000) });\n      if (x.ok) {\n        const j = await x.json();\n        const ac = (j.states || []).filter(s => s[5] != null && s[6] != null).map(s => ({\n          hex: s[0], flight: (s[1] || \"\").trim(), lat: s[6], lon: s[5], track: s[10],\n          gs: s[9] == null ? null : s[9] * 1.944,\n          alt_baro: s[8] ? \"ground\" : (s[7] == null ? null : Math.round(s[7] * 3.281)),\n          baro_rate: s[11] == null ? null : Math.round(s[11] * 196.85), squawk: s[14] || \"\"\n        }));\n        return new Response(JSON.stringify({ ac }), { headers: json });\n      }\n      errors.push(\"opensky: HTTP \" + x.status);\n    } catch (e) { errors.push(\"opensky: \" + (e && e.message || \"failed\")); }\n    return new Response(JSON.stringify({ ac: [], errors }), { status: 502, headers: cors });\n  }\n};\n";
 function lmAlt(a){if(a.alt_baro==="ground")return "#9aa3b5";var v=typeof a.alt_baro==="number"?a.alt_baro:0,t=Math.max(0,Math.min(1,v/40000));return "hsl("+Math.round(32+t*170)+",92%,"+Math.round(52-t*6)+"%)"}
 function lmAttr(){var e=$("lattr");if(!e)return;var L=LV.tileErr?"off":LV.layer;e.textContent=(L==="sat"?"Imagery © Esri":L==="street"?"© OpenStreetMap contributors":"© Natural Earth")+" · adsb.lol";document.querySelectorAll(".lay button").forEach(function(b){b.className=b.getAttribute("data-lay")===LV.layer?"on":""})}
 function lmLayer(l){LV.layer=l;LV.tileErr=false;try{localStorage.setItem("planespotter.lay",l)}catch(e){}
@@ -530,11 +532,26 @@ function renderLive(){
   '<div class="card" style="margin-top:12px"><b>Live feed relay (fixes "blocked or offline")</b><p class="meta" style="margin:6px 0 10px">If the free feeds are blocked on your device, paste the address of your own free relay here. Setup steps are below.</p><input id="lrel" placeholder="https://plane-relay.yourname.workers.dev" value="'+esc(LV.relay)+'" style="width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit"><div style="display:flex;gap:8px"><button class="btn sm" id="lrelsave" style="margin-top:10px">Save</button><button class="btn sm ghost" id="lrelclr" style="margin-top:10px">Remove</button></div>'+
   '<details style="margin-top:12px"><summary style="cursor:pointer;font-weight:600">How to set up the relay (5 minutes, free)</summary><ol class="meta" style="padding-left:18px;line-height:1.5"><li>Sign up free at dash.cloudflare.com.</li><li>Go to Workers &amp; Pages → Create → Create Worker → Deploy.</li><li>Tap Edit code, delete everything, paste the code below, then Deploy.</li><li>Copy the worker address (ends in .workers.dev) and paste it above, then Save.</li></ol><button class="btn sm" id="lrelcp">Copy relay code</button><pre style="white-space:pre-wrap;font-size:.7rem;background:var(--bg);padding:10px;border-radius:10px;overflow:auto;max-height:220px;margin-top:10px">'+esc(WORKER)+'</pre></details></div>'+
   '<div class="card meta" style="margin-top:12px">Open this area in a full map: '+lmLinks()+'</div>';
-  var el=$("lmap"),dr=null;
-  el.onpointerdown=function(e){if(e.target.closest&&e.target.closest(".zoom,.lay"))return;LV.moved=false;dr={sx:e.clientX,sy:e.clientY,cx:wx(LV.lon,LV.z),cy:wy(LV.lat,LV.z)}};
-  document.onpointermove=function(e){if(!dr)return;var dx=e.clientX-dr.sx,dy=e.clientY-dr.sy;if(Math.abs(dx)+Math.abs(dy)>5){LV.moved=true;if(LV.follow){LV.follow=false;var fb=$("dfol");if(fb){fb.textContent="Follow";fb.className="btn sm ghost"}}}if(!LV.moved)return;
+  var el=$("lmap"),dr=null,ptr={},pin=null;
+  function npt(){return Object.keys(ptr).length}
+  function relp(e){var r=el.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}}
+  function startPin(){dr=null;var k=Object.keys(ptr),a=ptr[k[0]],b=ptr[k[1]],w=el.clientWidth,h=el.clientHeight,z=LV.z,mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+    pin={d0:Math.max(10,Math.hypot(a.x-b.x,a.y-b.y)),z0:z,lon:unx(wx(LV.lon,z)+mx-w/2,z),lat:uny(wy(LV.lat,z)+my-h/2,z)};LV.moved=true;
+    if(LV.follow){LV.follow=false;var fb=$("dfol");if(fb){fb.textContent="Follow";fb.className="btn sm ghost"}}}
+  el.onpointerdown=function(e){if(e.target.closest&&e.target.closest(".zoom,.lay"))return;
+    ptr[e.pointerId]=relp(e);
+    if(npt()===1){LV.moved=false;dr={sx:e.clientX,sy:e.clientY,cx:wx(LV.lon,LV.z),cy:wy(LV.lat,LV.z)}}else if(npt()===2)startPin()};
+  document.onpointermove=function(e){
+    if(ptr[e.pointerId])ptr[e.pointerId]=relp(e);
+    if(pin&&npt()>=2){var k=Object.keys(ptr),a=ptr[k[0]],b=ptr[k[1]],w=el.clientWidth,h=el.clientHeight,d=Math.hypot(a.x-b.x,a.y-b.y),z=Math.max(2,Math.min(14,pin.z0+Math.log(d/pin.d0)/Math.LN2)),mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+      LV.z=z;LV.lon=((unx(wx(pin.lon,z)-(mx-w/2),z)+540)%360)-180;LV.lat=Math.max(-80,Math.min(80,uny(wy(pin.lat,z)-(my-h/2),z)));lmSched();return}
+    if(!dr)return;var dx=e.clientX-dr.sx,dy=e.clientY-dr.sy;if(Math.abs(dx)+Math.abs(dy)>5){LV.moved=true;if(LV.follow){LV.follow=false;var fb=$("dfol");if(fb){fb.textContent="Follow";fb.className="btn sm ghost"}}}if(!LV.moved)return;
     LV.lon=unx(dr.cx-dx,LV.z);LV.lon=((LV.lon+540)%360)-180;LV.lat=Math.max(-80,Math.min(80,uny(dr.cy-dy,LV.z)));lmSched()};
-  document.onpointerup=function(){if(dr&&LV.moved)lmSoon();dr=null;setTimeout(function(){LV.moved=false},0)};
+  function endPtr(e){delete ptr[e.pointerId];
+    if(pin&&npt()<2){pin=null;lmSoon();var k=Object.keys(ptr);if(k.length===1){var p=ptr[k[0]],r=el.getBoundingClientRect();dr={sx:p.x+r.left,sy:p.y+r.top,cx:wx(LV.lon,LV.z),cy:wy(LV.lat,LV.z)}}else dr=null;setTimeout(function(){LV.moved=false},80);return}
+    if(dr&&LV.moved)lmSoon();if(npt()===0)dr=null;setTimeout(function(){LV.moved=false},0)}
+  document.onpointerup=endPtr;document.onpointercancel=endPtr;
+  ["gesturestart","gesturechange"].forEach(function(t){el.addEventListener(t,function(e){e.preventDefault()})});
   el.onclick=function(e){if(LV.moved||(e.target.closest&&e.target.closest(".zoom,.ac,.lay")))return;var r=el.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,best=-1,bd=24;
     (LG&&LG.hits||[]).forEach(function(q){var d=Math.hypot(q.x-x,q.y-y);if(d<bd){bd=d;best=q.i}});
     if(best>=0){LV.sel="";lmInfo();lmApt(best,false)}};
@@ -546,7 +563,7 @@ function renderLive(){
     if(!navigator.geolocation){$("lstat").textContent="Location is not available here. Pick a city instead.";return}
     navigator.geolocation.getCurrentPosition(function(p){LV.me={lat:p.coords.latitude,lon:p.coords.longitude};LV.lat=p.coords.latitude;LV.lon=p.coords.longitude;LV.z=9;lmDraw();lmFetch()},function(){$("lstat").textContent="Location is not available here. Pick a city instead."},{timeout:8000})};
   $("lemb").onclick=function(){
-    var f=$("lframe"),u="https://globe.airplanes.live/?lat="+LV.lat.toFixed(2)+"&lon="+LV.lon.toFixed(2)+"&zoom="+LV.z;
+    var f=$("lframe"),u="https://globe.airplanes.live/?lat="+LV.lat.toFixed(2)+"&lon="+LV.lon.toFixed(2)+"&zoom="+Math.round(LV.z);
     if(f.innerHTML){f.innerHTML="";this.textContent="Full live map (embedded)";return}
     f.innerHTML='<div class="card" style="padding:0;overflow:hidden;margin-top:10px"><iframe src="'+u+'" title="Live flight map" style="border:0;width:100%;height:60vh;min-height:340px;display:block"></iframe></div><p class="meta" style="margin:6px 2px">If this stays blank, the site does not allow embedding here. <a target="_blank" rel="noopener" href="'+u+'">Open it in a new tab</a>.</p>';
     this.textContent="Hide embedded map"};
