@@ -120,6 +120,25 @@ input[type=date]::-webkit-date-and-time-value{text-align:left;min-width:0}
 .apt-t{width:100%;border-collapse:collapse;font-size:.82rem}.apt-t th{text-align:left;color:var(--mute);font-weight:600;padding:4px 8px 4px 0}.apt-t td{padding:6px 8px 6px 0;border-top:1px solid var(--line)}
 .lay{position:absolute;left:10px;top:10px;display:flex;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;z-index:5;box-shadow:0 2px 8px rgba(0,0,0,.2)}
 .lay button{border:0;background:transparent;color:var(--ink);font:inherit;font-size:.76rem;font-weight:600;padding:8px 10px;cursor:pointer}.lay button.on{background:var(--acc);color:#fff}
+#linfo{scroll-margin-top:calc(50dvh + 10px)}
+.al{position:absolute;left:24px;top:2px;display:flex;align-items:center;gap:4px;background:rgba(10,20,40,.78);color:#fff;border-radius:999px;padding:2px 7px 2px 2px;font-size:.68rem;font-weight:700;white-space:nowrap;pointer-events:none;backdrop-filter:blur(3px)}
+.al em{font-style:normal}
+.lg{display:inline-flex;align-items:center;justify-content:center;flex:none;border-radius:50%;background:#fff;color:#1d2a44;font-size:.55rem;font-weight:800;overflow:hidden;vertical-align:middle}.lg img{width:100%;height:100%;object-fit:contain}
+.dc .dh{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.dcs{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dty{font-size:.72rem;font-weight:700;background:var(--acc2);color:var(--acc);border-radius:6px;padding:2px 8px}
+.dal{display:flex;align-items:center;gap:8px;font-weight:600;margin:4px 0 2px}
+.dph{position:relative;margin:12px 0;border-radius:14px;overflow:hidden;background:var(--acc2);min-height:0}.dph img{display:block;width:100%;max-height:210px;object-fit:cover}
+#live a.dcr{color:#fff;font-weight:500}
+.dcr{position:absolute;left:0;right:0;bottom:0;padding:14px 10px 6px;font-size:.68rem;color:#fff;text-decoration:none;background:linear-gradient(transparent,rgba(0,0,0,.65))}
+.drt2{border:1px solid var(--line);border-radius:14px;background:var(--bg);margin-bottom:12px;overflow:hidden}
+.drow{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:14px 12px 6px}
+.de{flex:1;min-width:0}.de:last-child{text-align:right}.dc3{font-size:2rem;font-weight:800;letter-spacing:-.02em;line-height:1}.dcity{font-weight:600;font-size:.85rem;margin-top:2px}
+.dpl{width:38px;height:38px;border-radius:50%;background:var(--acc2);color:var(--acc);display:flex;align-items:center;justify-content:center;flex:none;transform:rotate(90deg)}.dpl svg{width:22px;height:22px;fill:currentColor}
+.dbar{height:6px;border-radius:6px;background:var(--line);margin:8px 12px 4px;overflow:hidden}.dbar i{display:block;height:100%;background:var(--acc);border-radius:6px}
+.dbl{display:flex;justify-content:space-between;padding:0 12px 12px;font-size:.75rem;color:var(--mute)}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dm{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:9px 11px}.dm span{display:block;font-size:.7rem;color:var(--mute)}.dm b{font-size:.95rem}
 .zoom{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px;z-index:5}
 .zoom button{width:40px;height:40px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit;font-size:1.3rem;font-weight:700;cursor:pointer}
 .attr{position:absolute;left:8px;bottom:6px;font-size:.65rem;background:rgba(255,255,255,.8);color:#333;padding:1px 6px;border-radius:6px;z-index:5}
@@ -378,7 +397,10 @@ function lmDraw(){
       el.appendChild(d);LV.mk[a.hex]=d}
     d.style.left=Math.round(wx(a.lon,z)-cx+w/2)+"px";d.style.top=Math.round(wy(a.lat,z)-cy+h/2)+"px";
     d.firstChild.style.transform="rotate("+(a.track||0)+"deg)";
-    d.className="ac"+(a.hex===LV.sel?" sel":"");d.style.color=a.hex===LV.sel?"":lmAlt(a)});
+    d.className="ac"+(a.hex===LV.sel?" sel":"");d.style.color=a.hex===LV.sel?"":lmAlt(a);
+    var air=lmAir(a),cs=(a.flight||"").trim(),key=(z>=9?"f":z>=7?"l":"n")+(air?air[0]:"")+(z>=9?cs:"");
+    if(d._ak!==key){d._ak=key;if(!d._al){d._al=document.createElement("span");d._al.className="al";d.appendChild(d._al)}var L=d._al;L.innerHTML="";
+      if(key.charAt(0)==="n"||(!air&&z<9)||(!air&&!cs)){L.style.display="none"}else{L.style.display="";if(air)L.appendChild(lmLogo(air,16));if(z>=9&&cs){var tx=document.createElement("em");tx.textContent=cs;L.appendChild(tx)}}}});
   if(LV.me){var m=LV.meEl;if(!m||!m.parentNode){m=document.createElement("div");m.className="me";el.appendChild(m);LV.meEl=m}m.style.left=Math.round(wx(LV.me.lon,z)-cx+w/2)+"px";m.style.top=Math.round(wy(LV.me.lat,z)-cy+h/2)+"px"}
   Object.keys(LV.mk).forEach(function(k){if(!seen[k]){var d=LV.mk[k];if(d.parentNode)d.parentNode.removeChild(d);delete LV.mk[k]}});
 }
@@ -403,12 +425,12 @@ function lmFetch(){
     .then(function(res){clearTimeout(tm);if(!res.ok)throw new Error("HTTP "+res.status);return res.json()})
     .then(function(j){
       var list=lmNorm(p,j).filter(function(a){return a&&typeof a.lat==="number"&&typeof a.lon==="number"}).slice(0,400);
-      LV.prov=p.n;LV.err="";LV.ac=list;LV.t0=Date.now();done();lmDraw();lmStatus();lmInfo()})
+      LV.prov=p.n;LV.err="";LV.ac=list;LV.t0=Date.now();if(LV.follow&&LV.sel){var fa=list.filter(function(x){return x.hex===LV.sel})[0];if(fa){LV.lat=fa.lat;LV.lon=fa.lon}}done();lmDraw();lmStatus();lmInfo()})
     .catch(function(e){clearTimeout(tm);fails.push(p.n+": "+(e&&e.name==="AbortError"?"timed out":(e instanceof TypeError?"blocked or offline":((e&&e.message)||"error"))));next(i+1)})}
   next(0)}
 function lmSoon(){clearTimeout(LV.ft);LV.ft=setTimeout(lmFetch,450)}
 function lmZoom(d){LV.z=Math.max(2,Math.min(14,LV.z+d));lmDraw();lmSoon()}
-var WORKER="export default {\n  async fetch(req) {\n    const u = new URL(req.url);\n    const lat = +u.searchParams.get(\"lat\"), lon = +u.searchParams.get(\"lon\");\n    const r = Math.min(250, +u.searchParams.get(\"r\") || 100);\n    const cors = { \"access-control-allow-origin\": \"*\" };\n    if (!isFinite(lat) || !isFinite(lon)) return new Response(\"lat and lon required\", { status: 400, headers: cors });\n    const sources = [\n      `https://api.adsb.lol/v2/point/${lat}/${lon}/${r}`,\n      `https://api.airplanes.live/v2/point/${lat}/${lon}/${r}`,\n      `https://opendata.adsb.fi/api/v2/lat/${lat}/lon/${lon}/dist/${r}`\n    ];\n    for (const s of sources) {\n      try {\n        const x = await fetch(s, { headers: { \"user-agent\": \"plane-spotter\" } });\n        if (x.ok) return new Response(await x.text(), { headers: { ...cors, \"content-type\": \"application/json\", \"cache-control\": \"public, max-age=10\" } });\n      } catch (e) {}\n    }\n    return new Response('{\"ac\":[]}', { status: 502, headers: cors });\n  }\n};\n";
+var WORKER="export default {\n  async fetch(req) {\n    const u = new URL(req.url);\n    const cors = { \"access-control-allow-origin\": \"*\" };\n    const json = { ...cors, \"content-type\": \"application/json\", \"cache-control\": \"public, max-age=10\" };\n    const proxy = async (url, ttl) => {\n      try {\n        const x = await fetch(url, { headers: { \"user-agent\": \"plane-spotter\" } });\n        return new Response(await x.text(), { status: x.status, headers: { ...json, \"cache-control\": \"public, max-age=\" + ttl } });\n      } catch (e) { return new Response(\"{}\", { status: 502, headers: cors }); }\n    };\n    const route = u.searchParams.get(\"route\");\n    if (route) return proxy(\"https://api.adsb.lol/api/0/route/\" + encodeURIComponent(route), 300);\n    const photo = u.searchParams.get(\"photo\");\n    if (photo) return proxy(\"https://api.planespotters.net/pub/photos/hex/\" + encodeURIComponent(photo), 3600);\n    const lat = +u.searchParams.get(\"lat\"), lon = +u.searchParams.get(\"lon\");\n    const r = Math.min(250, +u.searchParams.get(\"r\") || 100);\n    if (!isFinite(lat) || !isFinite(lon)) return new Response(\"lat and lon required\", { status: 400, headers: cors });\n    const sources = [\n      `https://api.adsb.lol/v2/point/${lat}/${lon}/${r}`,\n      `https://api.airplanes.live/v2/point/${lat}/${lon}/${r}`,\n      `https://opendata.adsb.fi/api/v2/lat/${lat}/lon/${lon}/dist/${r}`\n    ];\n    for (const s of sources) {\n      try {\n        const x = await fetch(s, { headers: { \"user-agent\": \"plane-spotter\" } });\n        if (x.ok) return new Response(await x.text(), { headers: json });\n      } catch (e) {}\n    }\n    return new Response('{\"ac\":[]}', { status: 502, headers: cors });\n  }\n};\n";
 function lmAlt(a){if(a.alt_baro==="ground")return "#9aa3b5";var v=typeof a.alt_baro==="number"?a.alt_baro:0,t=Math.max(0,Math.min(1,v/40000));return "hsl("+Math.round(32+t*170)+",92%,"+Math.round(52-t*6)+"%)"}
 function lmAttr(){var e=$("lattr");if(!e)return;var L=LV.tileErr?"off":LV.layer;e.textContent=(L==="sat"?"Imagery © Esri":L==="street"?"© OpenStreetMap contributors":"© Natural Earth")+" · adsb.lol";document.querySelectorAll(".lay button").forEach(function(b){b.className=b.getAttribute("data-lay")===LV.layer?"on":""})}
 function lmLayer(l){LV.layer=l;LV.tileErr=false;try{localStorage.setItem("planespotter.lay",l)}catch(e){}
@@ -446,19 +468,59 @@ function lmAptNear(){
   var cl=Math.cos(r[4]*Math.PI/180),list=LV.ac.filter(function(a){return typeof a.lat==="number"&&Math.hypot((a.lat-r[4])*60,(a.lon-r[5])*60*cl)<=8}).sort(function(a,b){return Math.hypot(a.lat-r[4],(a.lon-r[5])*cl)-Math.hypot(b.lat-r[4],(b.lon-r[5])*cl)});
   if(!list.length){n.textContent="No aircraft within 8 nm right now.";return}
   n.innerHTML='<div style="margin-bottom:4px">'+list.length+' within 8 nm</div>'+list.slice(0,10).map(function(a){var t=lmType(a.t);return '<div style="display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid var(--line)"><b>'+esc((a.flight||"").trim()||a.r||a.hex)+'</b><span>'+esc((a.t||"")+(t?" · "+t:""))+' · '+(a.alt_baro==="ground"?"ground":(typeof a.alt_baro==="number"?a.alt_baro.toLocaleString()+" ft":"—"))+'</span></div>'}).join("")}
+var AL=(function(){var o={};"UAL|UA|United Airlines;AAL|AA|American Airlines;DAL|DL|Delta Air Lines;SWA|WN|Southwest Airlines;ASA|AS|Alaska Airlines;JBU|B6|JetBlue;NKS|NK|Spirit Airlines;FFT|F9|Frontier Airlines;AAY|G4|Allegiant Air;SCX|SY|Sun Country Airlines;HAL|HA|Hawaiian Airlines;QXE|QX|Horizon Air;SKW|OO|SkyWest Airlines;ENY|MQ|Envoy Air;EDV|9E|Endeavor Air;RPA|YX|Republic Airways;JIA|OH|PSA Airlines;PDT|PT|Piedmont Airlines;ASH|YV|Mesa Airlines;GJS|G7|GoJet Airlines;UCA|C5|CommuteAir;AWI|ZW|Air Wisconsin;RVF|7H|Ravn Alaska;CEX|KO|Alaska Central Express;LYC|L2|Lynden Air Cargo;ACA|AC|Air Canada;JZA|QK|Jazz Aviation;WJA|WS|WestJet;POE|PD|Porter Airlines;TSC|TS|Air Transat;FDX|FX|FedEx Express;UPS|5X|UPS Airlines;GTI|5Y|Atlas Air;CKS|K4|Kalitta Air;KFS||Kalitta Charters;ABX|GB|ABX Air;ATN|8C|Air Transport International;PAC|PO|Polar Air Cargo;WGN||Western Global Airlines;NCA|KZ|Nippon Cargo Airlines;CLX|CV|Cargolux;CAL|CI|China Airlines;CKK|CK|China Cargo Airlines;CCA|CA|Air China;CSN|CZ|China Southern;CES|MU|China Eastern;CPA|CX|Cathay Pacific;KAL|KE|Korean Air;AAR|OZ|Asiana Airlines;EVA|BR|EVA Air;JAL|JL|Japan Airlines;ANA|NH|All Nippon Airways;SIA|SQ|Singapore Airlines;THA|TG|Thai Airways;PAL|PR|Philippine Airlines;MAS|MH|Malaysia Airlines;QFA|QF|Qantas;ANZ|NZ|Air New Zealand;UAE|EK|Emirates;QTR|QR|Qatar Airways;ETD|EY|Etihad Airways;THY|TK|Turkish Airlines;BAW|BA|British Airways;VIR|VS|Virgin Atlantic;DLH|LH|Lufthansa;AFR|AF|Air France;KLM|KL|KLM;SAS|SK|SAS Scandinavian;FIN|AY|Finnair;IBE|IB|Iberia;SWR|LX|Swiss;AUA|OS|Austrian Airlines;ICE|FI|Icelandair;EIN|EI|Aer Lingus;AZA|AZ|ITA Airways;LOT|LO|LOT Polish;AFL|SU|Aeroflot;AIC|AI|Air India;ELY|LY|El Al;ETH|ET|Ethiopian Airlines;SAA|SA|South African Airways;AMX|AM|Aeromexico;AVA|AV|Avianca;LAN|LA|LATAM Airlines;GLO|G3|GOL;AZU|AD|Azul;VOI|Y4|Volaris;EJA|1I|NetJets;LXJ||Flexjet;RCH||US Air Force (Air Mobility)".split(";").forEach(function(x){var p=x.split("|");o[p[0]]=[p[1],p[2]]});return o})();
+function lmAir(a){var m=/^([A-Z]{3})\d/.exec((a.flight||"").trim());return m&&AL[m[1]]?AL[m[1]]:null}
+function lmLogo(air,sz){var w=document.createElement("span");w.className="lg";w.style.width=w.style.height=sz+"px";
+  var fb=function(){w.innerHTML="";w.textContent=air&&air[0]?air[0].slice(0,3):"✈"};
+  if(air&&air[0]){var i=new Image();i.alt=air[1];i.onerror=fb;i.src="https://pics.avs.io/"+sz*3+"/"+sz*3+"/"+air[0]+".png";w.appendChild(i)}else fb();return w}
+var APX=null;
+function apFind(code){if(!code)return null;if(!APX){APX={};APT.a.forEach(function(r,i){APX[r[0]]=i;if(r[1]&&APX[r[1]]==null)APX[r[1]]=i})}var i=APX[code];return i==null?null:APT.a[i]}
+function hav(a,b,c,d){var R=3958.8,p=Math.PI/180,x=Math.sin((c-a)*p/2),y=Math.sin((d-b)*p/2),h=x*x+Math.cos(a*p)*Math.cos(c*p)*y*y;return 2*R*Math.asin(Math.sqrt(h))}
+LV.rt=LV.rt||{};LV.ph=LV.ph||{};
+function lmGet(path,arg,cb){
+  var urls=["https://api.adsb.lol/api/0/route/","https://api.planespotters.net/pub/photos/hex/"],direct=urls[path==="route"?0:1]+encodeURIComponent(arg),rel=LV.relay?LV.relay.replace(/\/+$/,"")+"/?"+path+"="+encodeURIComponent(arg):"";
+  function t(u,next){fetch(u).then(function(r){if(!r.ok)throw 0;return r.json()}).then(cb).catch(function(){if(next)next();else cb(null)})}
+  t(direct,rel?function(){t(rel)}:null)}
+function lmInfoUpd(a){
+  var g=$("dmet");if(!g)return;
+  var alt=a.alt_baro==="ground"?"On ground":(typeof a.alt_baro==="number"?a.alt_baro.toLocaleString()+" ft":"—"),vr=typeof a.baro_rate==="number"?(a.baro_rate>0?"▲ ":a.baro_rate<0?"▼ ":"")+Math.abs(Math.round(a.baro_rate)).toLocaleString()+" fpm":"—";
+  var m=[["Altitude",alt],["Ground speed",typeof a.gs==="number"?Math.round(a.gs)+" kt · "+Math.round(a.gs*1.15078)+" mph":"—"],["Heading",typeof a.track==="number"?Math.round(a.track)+"°":"—"],["Vertical rate",vr],["Squawk",a.squawk||"—"],["Registration",a.r||"—"],["ICAO hex",String(a.hex||"").toUpperCase()],["Position",a.lat.toFixed(3)+"°, "+a.lon.toFixed(3)+"°"]];
+  g.innerHTML=m.map(function(r){return '<div class="dm"><span>'+esc(r[0])+'</span><b>'+esc(r[1])+'</b></div>'}).join("");
+  var f=$("dfol");if(f){f.textContent=LV.follow?"Following ✓":"Follow";f.className="btn sm"+(LV.follow?"":" ghost")}
+  lmRouteDraw(a)}
+function lmRouteDraw(a){
+  var box=$("drt");if(!box)return;var cs=(a.flight||"").trim(),R=LV.rt[cs];
+  if(R===undefined){box.innerHTML='<div class="meta" style="padding:12px;text-align:center">Looking up route…</div>';return}
+  if(!R||!R.codes||R.codes.length<2){box.innerHTML='<div class="meta" style="padding:12px;text-align:center">Route information is not available for this flight.</div>';return}
+  var o=apFind(R.codes[0]),d=apFind(R.codes[R.codes.length-1]);
+  function end(c,r){return '<div class="de"><div class="dc3">'+esc(r&&r[1]||c)+'</div><div class="dcity">'+esc(r?(r[7]||r[2]):"")+'</div><div class="meta" style="font-size:.7rem">'+esc(r?r[2]:c)+'</div></div>'}
+  var bar="";
+  if(o&&d){var tot=hav(o[4],o[5],d[4],d[5]),dn=hav(o[4],o[5],a.lat,a.lon),rem=hav(a.lat,a.lon,d[4],d[5]),pct=Math.max(2,Math.min(98,dn/Math.max(1,dn+rem)*100));
+    bar='<div class="dbar"><i style="width:'+pct.toFixed(1)+'%"></i></div><div class="dbl"><span>'+Math.round(dn).toLocaleString()+' mi flown</span><span>'+Math.round(rem).toLocaleString()+' mi to go</span></div>'}
+  box.innerHTML='<div class="drow">'+end(R.codes[0],o)+'<div class="dpl">'+PLN+'</div>'+end(R.codes[R.codes.length-1],d)+'</div>'+bar}
 function lmInfo(){
   var box=$("linfo");if(!box)return;
   var a=LV.ac.filter(function(x){return x.hex===LV.sel})[0];
-  if(!a){box.innerHTML="";return}
-  var cs=(a.flight||"").trim(),t=lmType(a.t),alt=a.alt_baro==="ground"?"On the ground":(typeof a.alt_baro==="number"?a.alt_baro.toLocaleString()+" ft":"—");
-  var rows=[["Registration",a.r],["Type code",a.t?a.t+(t?" ("+t+")":""):""],["Altitude",alt],["Ground speed",typeof a.gs==="number"?Math.round(a.gs)+" kt":""],["Heading",typeof a.track==="number"?Math.round(a.track)+"°":""]].filter(function(r){return r[1]});
-  box.innerHTML='<div class="card"><h3 style="margin:0 0 6px">'+esc(cs||a.r||a.hex)+'</h3>'+rows.map(function(r){return '<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line)"><span class="meta">'+esc(r[0])+'</span><b>'+esc(r[1])+'</b></div>'}).join("")+
-  '<div style="margin-top:12px"><a target="_blank" rel="noopener" href="https://www.flightaware.com/live/flight/'+encodeURIComponent(cs||a.r||"")+'">Track on FlightAware</a></div>'+
-  '<button class="btn" id="lg">Log this aircraft</button></div>';
+  if(!a){if(!LV.sel||LV.infoHex!==LV.sel){box.innerHTML="";LV.infoHex=""}return}
+  if(LV.infoHex===a.hex){lmInfoUpd(a);return}
+  LV.infoHex=a.hex;
+  var cs=(a.flight||"").trim(),t=lmType(a.t),air=lmAir(a),opn=air?air[1]:(a.ownOp||"");
+  box.innerHTML='<div class="card dc"><div class="dh"><div style="min-width:0"><div class="dcs">'+esc(cs||a.r||a.hex)+(a.t?'<span class="dty">'+esc(a.t)+'</span>':'')+'</div><div class="dal" id="dal"></div><div class="meta">'+esc(a.desc||(t?t:""))+'</div></div><button class="btn ghost" id="dx" aria-label="Close" style="width:auto;margin:0;padding:6px 12px">✕</button></div>'+
+  '<div class="dph" id="dph"></div><div id="drt" class="drt2"></div><div class="dgrid" id="dmet"></div>'+
+  '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn sm ghost" id="dfol">Follow</button><button class="btn sm" id="lg" style="margin:0">Log this aircraft</button></div>'+
+  '<div style="margin-top:12px"><a target="_blank" rel="noopener" href="https://www.flightaware.com/live/flight/'+encodeURIComponent(cs||a.r||"")+'">Track on FlightAware</a></div></div>';
+  var al=$("dal");al.appendChild(lmLogo(air,22));var sp=document.createElement("span");sp.textContent=opn||"Unknown operator";al.appendChild(sp);
+  $("dx").onclick=function(){LV.sel="";LV.follow=false;LV.infoHex="";box.innerHTML="";lmDraw()};
+  $("dfol").onclick=function(){LV.follow=!LV.follow;var q=LV.ac.filter(function(x){return x.hex===LV.sel})[0];if(q){if(LV.follow){LV.lat=q.lat;LV.lon=q.lon;lmDraw()}lmInfoUpd(q)}};
   $("lg").onclick=function(){prefill=t;prefillV="";show("log");if(a.r)$("f-reg").value=String(a.r).toUpperCase();if(!t){$("f-type").value="Other";$("f-var").innerHTML=vopts("Other","")}};
-}
+  var ph=$("dph"),hex=a.hex;
+  function showPh(P){if(LV.infoHex!==hex||!P||!P.photos||!P.photos[0]){ph.style.display="none";return}var p=P.photos[0],src=(p.thumbnail_large||p.thumbnail||{}).src;if(!src){ph.style.display="none";return}
+    ph.innerHTML='<img src="'+esc(src)+'" alt=""><a class="dcr" target="_blank" rel="noopener" href="'+esc(p.link||"#")+'">© '+esc(p.photographer||"Photographer")+' · Planespotters.net</a>'}
+  if(LV.ph[hex]!==undefined)showPh(LV.ph[hex]);else lmGet("photo",hex,function(P){LV.ph[hex]=P;showPh(P)});
+  if(cs&&LV.rt[cs]===undefined&&/^[A-Z0-9]{3,8}$/.test(cs)){lmGet("route",cs,function(j){var c=null;try{if(j){var ac=j.airport_codes||(j[0]&&j[0].airport_codes);if(typeof ac==="string"&&ac.indexOf("-")>0)c=ac.split("-")}}catch(e){}LV.rt[cs]=c?{codes:c}:null;var q=LV.ac.filter(function(x){return x.hex===hex})[0];if(q&&LV.infoHex===hex)lmRouteDraw(q)})}
+  lmInfoUpd(a);setTimeout(function(){try{box.scrollIntoView({behavior:"smooth",block:"start"})}catch(e){}},60)}
 function renderLive(){
-  clearInterval(LV.timer);LV.tiles={};LV.mk={};LV.meEl=null;LV.busy=false;LV.again=false;LV.sel="";LV.apt=-1;LV.auto=false;LV.aptKey=-1;
+  clearInterval(LV.timer);LV.tiles={};LV.mk={};LV.meEl=null;LV.busy=false;LV.again=false;LV.sel="";LV.infoHex="";LV.follow=false;LV.apt=-1;LV.auto=false;LV.aptKey=-1;
   $("live").innerHTML=''+
   '<div class="lm" id="lmap"><canvas id="lcv" style="position:absolute;left:0;top:0;width:100%;height:100%;z-index:1"></canvas><div class="zoom"><button id="zi" aria-label="Zoom in">+</button><button id="zo" aria-label="Zoom out">−</button></div><div class="lay"><button data-lay="sat">Satellite</button><button data-lay="street">Street</button><button data-lay="off">Simple</button></div><div class="attr" id="lattr"></div></div>'+
   '<div class="meta" id="lstat" style="margin:8px 2px"></div><div id="linfo"></div><div id="lapt"></div>'+
@@ -470,7 +532,7 @@ function renderLive(){
   '<div class="card meta" style="margin-top:12px">Open this area in a full map: '+lmLinks()+'</div>';
   var el=$("lmap"),dr=null;
   el.onpointerdown=function(e){if(e.target.closest&&e.target.closest(".zoom,.lay"))return;LV.moved=false;dr={sx:e.clientX,sy:e.clientY,cx:wx(LV.lon,LV.z),cy:wy(LV.lat,LV.z)}};
-  document.onpointermove=function(e){if(!dr)return;var dx=e.clientX-dr.sx,dy=e.clientY-dr.sy;if(Math.abs(dx)+Math.abs(dy)>5)LV.moved=true;if(!LV.moved)return;
+  document.onpointermove=function(e){if(!dr)return;var dx=e.clientX-dr.sx,dy=e.clientY-dr.sy;if(Math.abs(dx)+Math.abs(dy)>5){LV.moved=true;if(LV.follow){LV.follow=false;var fb=$("dfol");if(fb){fb.textContent="Follow";fb.className="btn sm ghost"}}}if(!LV.moved)return;
     LV.lon=unx(dr.cx-dx,LV.z);LV.lon=((LV.lon+540)%360)-180;LV.lat=Math.max(-80,Math.min(80,uny(dr.cy-dy,LV.z)));lmSched()};
   document.onpointerup=function(){if(dr&&LV.moved)lmSoon();dr=null;setTimeout(function(){LV.moved=false},0)};
   el.onclick=function(e){if(LV.moved||(e.target.closest&&e.target.closest(".zoom,.ac,.lay")))return;var r=el.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,best=-1,bd=24;
